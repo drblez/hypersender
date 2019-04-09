@@ -1,16 +1,11 @@
 package main
 
 import (
-	"context"
 	"github.com/drblez/hypersender/config"
 	"github.com/drblez/hypersender/logger"
 	"github.com/drblez/hypersender/worker"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/dig"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 )
 
 func buildContainer() *dig.Container {
@@ -23,17 +18,12 @@ func buildContainer() *dig.Container {
 }
 
 func do(config *config.Config, log *logrus.Entry, worker *worker.Worker) {
-	quit := make(chan os.Signal)
-	signal.Notify(quit, syscall.SIGTERM)
-	ctx, cancel := context.WithCancel(context.Background())
-	wg := &sync.WaitGroup{}
-	err := worker.Do(ctx, wg)
+	log.Debugf("Start")
+	err := worker.Do()
 	if err != nil {
 		panic(err)
 	}
-	<-quit
-	cancel()
-	wg.Wait()
+	log.Debugf("Done")
 }
 
 func main() {

@@ -2,17 +2,24 @@ package worker
 
 import (
 	"context"
-	"fmt"
-	"github.com/drblez/hypersender/config"
-	"github.com/drblez/hypersender/logger"
-	"github.com/drblez/tasks"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"sync"
+
+	"github.com/drblez/hypersender/config"
+	"github.com/drblez/hypersender/logger"
+	"github.com/drblez/tasks"
+	"github.com/joomcode/errorx"
+	"github.com/sirupsen/logrus"
+)
+
+var (
+	Errors     = errorx.NewNamespace("worker")
+	FileErrors = Errors.NewType("file_error")
+	NetErrors  = Errors.NewType("net_error")
 )
 
 type Worker struct {
@@ -23,10 +30,11 @@ type Worker struct {
 }
 
 func Init(config *config.Config, log *logrus.Entry, nw *netWorker) *Worker {
+	dispatcher := tasks.NewDispatcher(config.FSParallelism, config.FSParallelism, logger.NewTaskLogger(log))
 	return &Worker{
 		config:     config,
 		log:        log,
-		dispatcher: tasks.NewDispatcher(config.FSParallelism, config.FSParallelism, logger.NewTaskLogger(log)),
+		dispatcher: dispatcher,
 		nw:         nw,
 	}
 }
@@ -37,15 +45,26 @@ func (fsw *Worker) doDir(startPath string) error {
 		return err
 	}
 
-	netFunc := func(fileName string, file io.Reader) func() error {
+	netFunc := func(fileName string, file io.ReadCloser) func() error {
 		return func() error {
-			fsw.nw.log.Debugf("Send file %s to %s", fileName, fsw.nw.config.URL)
+			defer file.Close()
+			fsw.nw.log.Infof("Sending file %s...", fileName)
 			result, err := http.Post(fsw.nw.config.URL, fsw.nw.config.ContentType, file)
 			if err != nil {
+				err := NetErrors.WrapWithNoMessage(err)
+				if fsw.config.PanicOnErrors {
+					panic(err)
+				}
 				return err
 			}
-			if result.StatusCode != http.StatusOK {
-				return fmt.Errorf("bad status code: %d", result.StatusCode)
+			if !fsw.config.IgnoreServiceErrors {
+				if result.StatusCode != http.StatusOK {
+					err := NetErrors.New("bad status code: %d", result.StatusCode)
+					if fsw.config.PanicOnErrors {
+						panic(err)
+					}
+					return err
+				}
 			}
 			return nil
 		}
@@ -56,6 +75,10 @@ func (fsw *Worker) doDir(startPath string) error {
 			fsw.log.Debugf("Process file: %s", fileName)
 			file, err := os.Open(fileName)
 			if err != nil {
+				err := FileErrors.WrapWithNoMessage(err)
+				if fsw.config.PanicOnErrors {
+					panic(err)
+				}
 				return err
 			}
 			fsw.nw.dispatcher.Payload(netFunc(fileName, file))
@@ -72,13 +95,17 @@ func (fsw *Worker) doDir(startPath string) error {
 			}
 			continue
 		}
+		fsw.log.Debugf("Sent to payload queue: %s", itemName)
 		fsw.dispatcher.Payload(fsFunc(itemName))
 	}
+
 	return nil
 }
 
-func (fsw *Worker) Do(ctx context.Context, wg *sync.WaitGroup) error {
-	netCtx, netCancel := context.WithCancel(ctx)
+func (fsw *Worker) Do() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := &sync.WaitGroup{}
+	netCtx, netCancel := context.WithCancel(context.Background())
 	netWg := &sync.WaitGroup{}
 	fsw.nw.dispatcher.Run(netCtx, netWg)
 	fsw.dispatcher.Run(ctx, wg)
@@ -86,7 +113,15 @@ func (fsw *Worker) Do(ctx context.Context, wg *sync.WaitGroup) error {
 	if err != nil {
 		return err
 	}
-	netCancel()
+	fsw.dispatcher.Payload(func() error {
+		cancel()
+		return nil
+	})
+	wg.Wait()
+	fsw.nw.dispatcher.Payload(func() error {
+		netCancel()
+		return nil
+	})
 	netWg.Wait()
 	return nil
 }
@@ -98,9 +133,11 @@ type netWorker struct {
 }
 
 func InitFSWorker(config *config.Config, log *logrus.Entry) *netWorker {
+	dispatcher := tasks.NewDispatcher(config.NetParallelism, config.NetParallelism, logger.NewTaskLogger(log))
+	//dispatcher.QuitOnEmpty()
 	return &netWorker{
 		config:     config,
 		log:        log,
-		dispatcher: tasks.NewDispatcher(config.NetParallelism, config.NetParallelism, logger.NewTaskLogger(log)),
+		dispatcher: dispatcher,
 	}
 }
