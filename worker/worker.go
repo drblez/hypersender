@@ -5,8 +5,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/drblez/hypersender/config"
@@ -17,9 +19,10 @@ import (
 )
 
 var (
-	Errors     = errorx.NewNamespace("worker")
-	FileErrors = Errors.NewType("file_error")
-	NetErrors  = Errors.NewType("net_error")
+	Errors       = errorx.NewNamespace("worker")
+	FileErrors   = Errors.NewType("file")
+	NetErrors    = Errors.NewType("net")
+	CommonErrors = Errors.NewType("common")
 )
 
 type Worker struct {
@@ -42,14 +45,21 @@ func Init(config *config.Config, log *logrus.Entry, nw *netWorker) *Worker {
 func (fsw *Worker) doDir(startPath string) error {
 	allDirs, err := ioutil.ReadDir(startPath)
 	if err != nil {
-		return err
+		return FileErrors.WrapWithNoMessage(err)
 	}
 
 	netFunc := func(fileName string, file io.ReadCloser) func() error {
 		return func() error {
 			defer file.Close()
 			fsw.nw.log.Infof("Sending file %s...", fileName)
-			result, err := http.Post(fsw.nw.config.URL, fsw.nw.config.ContentType, file)
+			s := fsw.nw.config.URL
+			if fsw.config.PathSubst {
+				if fsw.config.StripPath {
+					_, fileName = path.Split(fileName)
+				}
+				s = strings.ReplaceAll(s, fsw.config.SubstString, url.PathEscape(fileName))
+			}
+			result, err := http.Post(s, fsw.nw.config.ContentType, file)
 			if err != nil {
 				err := NetErrors.WrapWithNoMessage(err)
 				if fsw.config.PanicOnErrors {

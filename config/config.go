@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/joomcode/errorx"
 )
@@ -24,6 +26,7 @@ type Config struct {
 	ContentType         string `short:"t" long:"content-type" default:"application/json"`
 	PanicOnErrors       bool   `short:"E" long:"panic-on-errors" description:"Panic on error"`
 	IgnoreServiceErrors bool   `short:"I" long:"ignore-service-errors" description:"Ignore non 200 status code"`
+	StripPath           bool   `short:"S" long:"strip-path" description:"Strip path from substitution"`
 }
 
 func Init() (*Config, error) {
@@ -35,10 +38,12 @@ func Init() (*Config, error) {
 		case *flags.Error:
 			switch err.Type {
 			case flags.ErrUnknownFlag:
-				return nil, UnknownFlag.New(err.Message)
+				os.Exit(1)
+				//return nil, UnknownFlag.New(err.Message)
 			}
 		}
-		return nil, CommonErrors.Wrap(err, "Config parse error")
+		os.Exit(1)
+		//return nil, CommonErrors.Wrap(err, "Config parse error")
 	}
 	return config, nil
 }
