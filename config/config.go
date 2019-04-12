@@ -27,6 +27,7 @@ type Config struct {
 	PanicOnErrors       bool   `short:"E" long:"panic-on-errors" description:"Panic on error"`
 	IgnoreServiceErrors bool   `short:"I" long:"ignore-service-errors" description:"Ignore non 200 status code"`
 	StripPath           bool   `short:"S" long:"strip-path" description:"Strip path from substitution"`
+	FilePattern         string `short:"P" long:"file-name-pattern" description:"Send only file with name matched with pattern"`
 }
 
 func Init() (*Config, error) {
