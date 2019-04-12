@@ -22,6 +22,7 @@ Application Options:
   -P, --file-name-pattern=     Send only file with name matched with pattern
       --dry-run                Do dry run
   -o, --timeout=               Network timeout (default: 30s)
+  -r, --recurse                Do directories recursively
 
 Help Options:
   -h, --help                   Show this help message
@@ -36,3 +37,7 @@ Help Options:
 ### Send files *.json from current directory to endpoint with file substitution
 
     hypersender -u 'http://localhost:88/upload?file=%f' -P '*.json' -s
+
+### Send files *.json from current directory and all subdirectories to endpoint
+
+    hypersender -u 'http://localhost:88/upload' -P '*.json' -r
