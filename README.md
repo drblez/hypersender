@@ -13,14 +13,15 @@ Application Options:
   -s, --path-substitution      Substitute file name in place of %f in URL
   -q, --substitute-sequence=   Change default sequence '%f' to user sequence (default: %f)
       --log-path=              Path to save log (default: .)
-  -f, --fs-parallelism=        (default: 10)
-  -n, --net-parallelism=       (default: 10)
-  -t, --content-type=          (default: application/json)
+  -f, --fs-parallelism=        Number of workers for file system operations (default: 10)
+  -n, --net-parallelism=       Number of worker for network operations (default: 10)
+  -t, --content-type=          Content type (default: application/json)
   -E, --panic-on-errors        Panic on error
-  -I, --ignore-service-errors  Ignore non 200 status code
+  -I, --ignore-service-errors  Ignore non-200 status code
   -S, --strip-path             Strip path from substitution
   -P, --file-name-pattern=     Send only file with name matched with pattern
       --dry-run                Do dry run
+  -o, --timeout=               Network timeout (default: 30s)
 
 Help Options:
   -h, --help                   Show this help message
