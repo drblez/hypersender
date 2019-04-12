@@ -31,6 +31,7 @@ type Config struct {
 	FilePattern         string        `short:"P" long:"file-name-pattern" description:"Send only file with name matched with pattern"`
 	DryRun              bool          `long:"dry-run" description:"Do dry run"`
 	NetTimeout          time.Duration `short:"o" long:"timeout" description:"Network timeout" default:"30s"`
+	Recurse             bool          `short:"r" long:"recurse" description:"Do directories recursively"`
 }
 
 func Init() (*Config, error) {

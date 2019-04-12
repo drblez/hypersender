@@ -106,9 +106,11 @@ func (fsw *Worker) doDir(startPath string) error {
 	for _, item := range allDirs {
 		itemName := path.Join(startPath, item.Name())
 		if item.IsDir() {
-			err := fsw.doDir(itemName)
-			if err != nil {
-				return err
+			if fsw.config.Recurse {
+				err := fsw.doDir(itemName)
+				if err != nil {
+					return err
+				}
 			}
 			continue
 		}
