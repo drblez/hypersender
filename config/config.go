@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/joomcode/errorx"
@@ -14,21 +15,22 @@ var (
 )
 
 type Config struct {
-	Debug               bool   `long:"debug" description:"Debug level logging" env:"DEBUG"`
-	Console             bool   `long:"console" description:"Output to console" env:"CONSOLE"`
-	Path                string `short:"p" long:"path" default:"." description:"Path to scan"`
-	URL                 string `short:"u" long:"url" description:"URL to send" required:"true"`
-	FileNameSubst       bool   `short:"s" long:"path-substitution" description:"Substitute file name in place of %f in URL"`
-	FileNameSubstString string `short:"q" long:"substitute-sequence" default:"%f" description:"Change default sequence '%f' to user sequence"`
-	LogPath             string `long:"log-path" default:"." description:"Path to save log"`
-	FSParallelism       int    `short:"f" long:"fs-parallelism" default:"10"`
-	NetParallelism      int    `short:"n" long:"net-parallelism" default:"10"`
-	ContentType         string `short:"t" long:"content-type" default:"application/json"`
-	PanicOnErrors       bool   `short:"E" long:"panic-on-errors" description:"Panic on error"`
-	IgnoreServiceErrors bool   `short:"I" long:"ignore-service-errors" description:"Ignore non 200 status code"`
-	StripPath           bool   `short:"S" long:"strip-path" description:"Strip path from substitution"`
-	FilePattern         string `short:"P" long:"file-name-pattern" description:"Send only file with name matched with pattern"`
-	DryRun              bool   `long:"dry-run" description:"Do dry run"`
+	Debug               bool          `long:"debug" description:"Debug level logging" env:"DEBUG"`
+	Console             bool          `long:"console" description:"Output to console" env:"CONSOLE"`
+	Path                string        `short:"p" long:"path" default:"." description:"Path to scan"`
+	URL                 string        `short:"u" long:"url" description:"URL to send" required:"true"`
+	FileNameSubst       bool          `short:"s" long:"path-substitution" description:"Substitute file name in place of %f in URL"`
+	FileNameSubstString string        `short:"q" long:"substitute-sequence" default:"%f" description:"Change default sequence '%f' to user sequence"`
+	LogPath             string        `long:"log-path" default:"." description:"Path to save log"`
+	FSParallelism       int           `short:"f" long:"fs-parallelism" default:"10" description:"Number of workers for file system operations"`
+	NetParallelism      int           `short:"n" long:"net-parallelism" default:"10" description:"Number of worker for network operations"`
+	ContentType         string        `short:"t" long:"content-type" default:"application/json" description:"Content type"`
+	PanicOnErrors       bool          `short:"E" long:"panic-on-errors" description:"Panic on error"`
+	IgnoreServiceErrors bool          `short:"I" long:"ignore-service-errors" description:"Ignore non-200 status code"`
+	StripPath           bool          `short:"S" long:"strip-path" description:"Strip path from substitution"`
+	FilePattern         string        `short:"P" long:"file-name-pattern" description:"Send only file with name matched with pattern"`
+	DryRun              bool          `long:"dry-run" description:"Do dry run"`
+	NetTimeout          time.Duration `short:"o" long:"timeout" description:"Network timeout" default:"30s"`
 }
 
 func Init() (*Config, error) {

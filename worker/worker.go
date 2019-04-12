@@ -63,7 +63,10 @@ func (fsw *Worker) doDir(startPath string) error {
 				fsw.nw.log.Infof("Dry run: %s", s)
 				return nil
 			}
-			result, err := http.Post(s, fsw.nw.config.ContentType, file)
+			client := &http.Client{
+				Timeout: fsw.nw.config.NetTimeout,
+			}
+			result, err := client.Post(s, fsw.nw.config.ContentType, file)
 			if err != nil {
 				err := NetErrors.WrapWithNoMessage(err)
 				if fsw.config.PanicOnErrors {
