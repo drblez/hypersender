@@ -18,8 +18,8 @@ type Config struct {
 	Console             bool   `long:"console" description:"Output to console" env:"CONSOLE"`
 	Path                string `short:"p" long:"path" default:"." description:"Path to scan"`
 	URL                 string `short:"u" long:"url" description:"URL to send" required:"true"`
-	PathSubst           bool   `short:"s" long:"path-substitution" description:"Substitute file name in place of %f in URL"`
-	SubstString         string `short:"q" long:"substitute-sequence" default:"%f" description:"Change default sequence '%f' to user sequence"`
+	FileNameSubst       bool   `short:"s" long:"path-substitution" description:"Substitute file name in place of %f in URL"`
+	FileNameSubstString string `short:"q" long:"substitute-sequence" default:"%f" description:"Change default sequence '%f' to user sequence"`
 	LogPath             string `long:"log-path" default:"." description:"Path to save log"`
 	FSParallelism       int    `short:"f" long:"fs-parallelism" default:"10"`
 	NetParallelism      int    `short:"n" long:"net-parallelism" default:"10"`
@@ -28,6 +28,7 @@ type Config struct {
 	IgnoreServiceErrors bool   `short:"I" long:"ignore-service-errors" description:"Ignore non 200 status code"`
 	StripPath           bool   `short:"S" long:"strip-path" description:"Strip path from substitution"`
 	FilePattern         string `short:"P" long:"file-name-pattern" description:"Send only file with name matched with pattern"`
+	DryRun              bool   `long:"dry-run" description:"Do dry run"`
 }
 
 func Init() (*Config, error) {

@@ -53,11 +53,15 @@ func (fsw *Worker) doDir(startPath string) error {
 			defer file.Close()
 			fsw.nw.log.Infof("Sending file %s...", fileName)
 			s := fsw.nw.config.URL
-			if fsw.config.PathSubst {
+			if fsw.config.FileNameSubst {
 				if fsw.config.StripPath {
 					_, fileName = path.Split(fileName)
 				}
-				s = strings.ReplaceAll(s, fsw.config.SubstString, url.PathEscape(fileName))
+				s = strings.ReplaceAll(s, fsw.config.FileNameSubstString, url.PathEscape(fileName))
+			}
+			if fsw.nw.config.DryRun {
+				fsw.nw.log.Infof("Dry run: %s", s)
+				return nil
 			}
 			result, err := http.Post(s, fsw.nw.config.ContentType, file)
 			if err != nil {
@@ -104,6 +108,13 @@ func (fsw *Worker) doDir(startPath string) error {
 				return err
 			}
 			continue
+		}
+		if fsw.config.FilePattern != "" {
+			_, fileName := path.Split(itemName)
+			if ok, err := path.Match(fsw.config.FilePattern, fileName); (err == nil && !ok) || (err != nil) {
+				fsw.log.Debugf("Skip: %s (%s, [%s], %v)", itemName, fileName, fsw.config.FilePattern, err)
+				continue
+			}
 		}
 		fsw.log.Debugf("Sent to payload queue: %s", itemName)
 		fsw.dispatcher.Payload(fsFunc(itemName))
