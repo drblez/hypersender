@@ -28,10 +28,10 @@ Help Options:
 
 ## Examples:
 
-### Send file from current directory to endpoint
+### Send files *.json from current directory to endpoint
 
-    hypersender -u 'http://localhost:88/upload' -P *.json
+    hypersender -u 'http://localhost:88/upload' -P '*.json'
     
-### Send file from current directory to endpoint with file substitution
+### Send files *.json from current directory to endpoint with file substitution
 
-    hypersender -u 'http://localhost:88/upload?file=%f' -P *.json -s
+    hypersender -u 'http://localhost:88/upload?file=%f' -P '*.json' -s
